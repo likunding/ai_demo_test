@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: springai-demo
+  ai:
+    model:
+      provider: ${AI_PROVIDER:ollama}
+
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_CHAT_MODEL:deepseek-coder:6.7b}
+          temperature: 0.2
+          max-tokens: 2048
+      embedding:
+        options:
+          model: ${OLLAMA_EMBED_MODEL:nomic-embed-text}
+
+    openai:
+      api-key: ${VLLM_API_KEY:dummy}
+      base-url: ${VLLM_BASE_URL:http://localhost:8000/v1}
+      chat:
+        options:
+          model: ${VLLM_CHAT_MODEL:deepseek-coder:6.7b-instruct}
+          temperature: 0.2
+          max-tokens: 2048
+      embedding:
+        options:
+          model: ${VLLM_EMBED_MODEL:nomic-embed-text}
+
+app:
+  rag:
+    documents-path: ${RAG_DOCS_PATH:./docs}
+    chunk-size: 500
+    chunk-overlap: 50
+    top-k: 3
+  workflow:
+    max-retry-loops: 3
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.dezhou: DEBUG

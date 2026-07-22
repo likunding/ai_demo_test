@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spring AI Demo 工作台</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f4f6fb;
+      color: #222;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #6a5acd 0%, #5b8def 100%);
+      color: #fff;
+      padding: 18px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    header h1 { font-size: 20px; font-weight: 600; }
+    header .links a {
+      color: #fff;
+      margin-left: 14px;
+      text-decoration: none;
+      opacity: .9;
+      padding: 4px 10px;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    header .links a:hover { background: rgba(255,255,255,.15); }
+    main { padding: 24px 28px; max-width: 1320px; margin: 0 auto; }
+    .meta {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #555;
+    }
+    .meta span b { color: #222; margin-right: 6px; }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e3e7f0;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      font-weight: 500;
+      transition: all .18s;
+    }
+    .tab-btn:hover { background: #eef1f8; color: #444; }
+    .tab-btn.active {
+      background: #fff;
+      color: #5b55cc;
+      box-shadow: 0 -2px 0 #5b55cc inset;
+      font-weight: 600;
+    }
+    .tab-panel {
+      display: none;
+      background: #fff;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    }
+    .tab-panel.active { display: block; }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
+    .card {
+      border: 1px solid #e6e9f3;
+      border-radius: 10px;
+      padding: 16px 18px;
+      background: #fcfdff;
+    }
+    .card h3 {
+      font-size: 15px;
+      color: #3a348a;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .card h3::before {
+      content: "";
+      width: 4px; height: 16px;
+      background: #6a5acd;
+      border-radius: 2px;
+      margin-right: 8px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #555;
+      margin: 8px 0 4px;
+    }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d4d8e5;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #fff;
+      transition: border .15s;
+    }
+    textarea { resize: vertical; min-height: 80px; font-family: "Cascadia Code", Consolas, monospace; }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #6a5acd;
+      box-shadow: 0 0 0 3px rgba(106,90,205,.15);
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 140px; }
+    button.btn {
+      margin-top: 12px;
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #6a5acd, #5b8def);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform .08s, box-shadow .15s;
+    }
+    button.btn:hover { box-shadow: 0 4px 12px rgba(106,90,205,.28); }
+    button.btn:active { transform: translateY(1px); }
+    button.btn.ghost {
+      background: transparent;
+      color: #6a5acd;
+      border: 1px solid #c5c0ef;
+    }
+    button.btn.ghost:hover { background: #f2f0ff; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .result-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 12.5px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 460px;
+      overflow: auto;
+    }
+    .result-box.loading { color: #94a3b8; }
+    .result-box.error { background: #450a0a; color: #fecaca; }
+    .result-box.success { background: #052e16; color: #bbf7d0; }
+    .hint { font-size: 12px; color: #888; margin-top: 6px; }
+    .kv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 12.5px;
+    }
+    .kv-table th, .kv-table td {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    .kv-table th { background: #f1f5f9; font-weight: 600; color: #334155; }
+    .kv-table tr:hover td { background: #f8fafc; }
+    .stream-area {
+      background: #0b1021;
+      color: #e2e8f0;
+      min-height: 120px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .chat-box {
+      margin-top: 12px;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid #e6e9f3;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafbff;
+    }
+    .chat-box .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 85%; }
+    .chat-box .msg.user { background: #e7e4ff; color: #2d2572; margin-left: auto; }
+    .chat-box .msg.ai { background: #fff; border: 1px solid #e6e9f3; }
+    .chip {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #eef2ff;
+      color: #4f46e5;
+      border-radius: 10px;
+      font-size: 11.5px;
+      margin: 2px 4px 2px 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 Spring AI Demo 工作台 · Ollama / vLLM</h1>
+  <div class="links">
+    <a href="/swagger-ui.html" target="_blank">📘 Swagger UI</a>
+    <a href="/v3/api-docs" target="_blank">📄 OpenAPI JSON</a>
+    <a href="/api/health" target="_blank">❤️ 健康检查</a>
+  </div>
+</header>
+
+<main>
+  <div class="meta">
+    <span><b>当前 Provider：</b><span id="provider">读取中...</span></span>
+    <span><b>启动时间：</b><span id="startup">—</span></span>
+    <span><b>访问基础：</b><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">http://localhost:8080</code></span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="basic">💬 基础聊天</button>
+    <button class="tab-btn" data-tab="parse">🧠 结构化 &amp; 记忆</button>
+    <button class="tab-btn" data-tab="rag">📚 RAG 检索</button>
+    <button class="tab-btn" data-tab="agent">🛠️ Agent 工具</button>
+    <button class="tab-btn" data-tab="flow">🪄 工作流 / Planner</button>
+    <button class="tab-btn" data-tab="kv">📊 KV Cache 测试</button>
+  </div>
+
+  <!-- ============ 基础聊天 ============ -->
+  <div class="tab-panel active" id="tab-basic">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>简单聊天调用</h3>
+        <label>Prompt（测试代码生成 / 对话）</label>
+        <textarea id="simple_prompt" rows="3">写一段 Python Redis 分布式锁的实现代码</textarea>
+        <div class="row">
+          <button class="btn" onclick="runSimpleChat()">🔵 运行</button>
+        </div>
+        <div id="simple_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>流式输出 (SSE)</h3>
+        <label>Prompt</label>
+        <textarea id="stream_prompt" rows="3">用 Go 写一个简单的 HTTP 服务器，包含 /ping 路由</textarea>
+        <div class="row">
+          <button class="btn" onclick="runStream()">▶️ 开始流式</button>
+          <button class="btn ghost" onclick="document.getElementById('stream_area').textContent=''">清空</button>
+        </div>
+        <div id="stream_area" class="stream-area">（点击"开始流式"后内容会逐字出现）</div>
+      </div>
+      <div class="card">
+        <h3>Prompt 模板生成 / 预览</h3>
+        <label>业务需求</label>
+        <textarea id="pt_req" rows="3">MySQL 分页查询工具函数</textarea>
+        <div class="row">
+          <button class="btn" onclick="runPT()">🧬 生成代码</button>
+          <button class="btn ghost" onclick="runPTPreview()">👀 只预览 Prompt</button>
+        </div>
+        <div id="pt_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>温度参数对比</h3>
+        <label>Prompt</label>
+        <textarea id="t_prompt" rows="2">写冒泡排序代码</textarea>
+        <label>温度列表（逗号分隔）</label>
+        <input type="text" id="t_list" value="0.1,0.5,0.9">
+        <button class="btn" onclick="runTemperature()">🔀 对比生成</button>
+        <div id="t_result" class="result-box loading">等待运行...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 结构化 & 记忆 ============ -->
+  <div class="tab-panel" id="tab-parse">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>Bean 结构化输出（CodeResp {code, explain}）</h3>
+        <label>需求</label>
+        <textarea id="bean_req" rows="3">实现一个 Python 快速排序函数，包含测试用例</textarea>
+        <button class="btn" onclick="runParseBean()">🫘 解析为 Bean</button>
+        <div id="bean_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>List / Map 结构化</h3>
+        <label>需求</label>
+        <textarea id="list_req" rows="3">5 个常用的微服务注册中心产品，并按开源 / 商业分类</textarea>
+        <div class="row">
+          <button class="btn" onclick="runParseList()">📋 List</button>
+          <button class="btn ghost" onclick="runParseMap()">🗺️ Map</button>
+        </div>
+        <div id="list_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card" style="grid-column: span 2;">
+        <h3>多轮对话记忆</h3>
+        <div class="row">
+          <div style="max-width:260px;">
+            <label>会话 ID</label>
+            <input type="text" id="mem_conv" value="demo-conv-001">
+            <button class="btn ghost" style="margin-top:8px;width:100%;" onclick="loadHistory()">📜 读取历史</button>
+            <button class="btn ghost" style="margin-top:4px;width:100%;" onclick="clearHistory()">🗑️ 清空会话</button>
+          </div>
+          <div style="flex:1;">
+            <label>本轮输入</label>
+            <textarea id="mem_input" rows="3">你好，请记住我的名字叫小明</textarea>
+            <button class="btn" onclick="sendMemoryChat()">📤 发送</button>
+          </div>
+        </div>
+        <div id="mem_chat" class="chat-box">（还没有消息）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RAG ============ -->
+  <div class="tab-panel" id="tab-rag">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>加载文本到向量库</h3>
+        <label>来源名称</label>
+        <input type="text" id="rag_src" value="manual-doc-01">
+        <label>文档内容</label>
+        <textarea id="rag_text" rows="8">Spring Boot 3 的自动配置原理：通过 spring.factories（新版 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports）自动加载自动配置类，条件注解 @ConditionalOnClass / @ConditionalOnMissingBean 控制生效时机。
+核心组件：
+1. spring-boot-starter-web：内置 Tomcat + Spring MVC
+2. spring-boot-starter-validation：基于 Jakarta Validation + Hibernate Validator
+3. 配置文件：application.yml / application.properties，支持 spring.config.import 导入
+常用端点：/actuator/health, /actuator/info, /actuator/metrics
+启动流程：SpringApplication.run() → 准备 Environment → 打印 Banner → 创建 ApplicationContext → 执行 Bean 初始化 → 启动内嵌容器 → 发布 ApplicationReadyEvent</textarea>
+        <div class="row">
+          <button class="btn" onclick="ragLoad()">⬆️ 加载</button>
+          <button class="btn ghost" onclick="ragSplit()">✂️ 先预览切分</button>
+        </div>
+        <div id="rag_load_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>加载 classpath 示例文档</h3>
+        <label>路径 Pattern</label>
+        <input type="text" id="rag_cp" value="classpath*:docs/**/*.txt">
+        <button class="btn" onclick="ragLoadClasspath()">📁 加载 docs/tools-spec.txt</button>
+        <div class="hint">已打包 src/main/resources/docs/tools-spec.txt：核心工具代码说明（CSV/JDBC/Redis/JWT/FastAPI 规范）</div>
+        <div id="rag_cp_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>相似度搜索（只检索不生成）</h3>
+        <label>查询</label>
+        <input type="text" id="rag_search_q" value="JWT token 生成和有效期">
+        <button class="btn" onclick="ragSearch()">🔎 搜索</button>
+        <div id="rag_search_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>RAG 问答（检索 + 生成）</h3>
+        <label>问题</label>
+        <textarea id="rag_query_q" rows="3">工具类文档里，Redis 分布式锁有哪些特性？如果业务异常会自动释放吗？</textarea>
+        <button class="btn" onclick="ragQuery()">💡 提问</button>
+        <div id="rag_query_result" class="result-box loading">等待运行...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Agent 工具 ============ -->
+  <div class="tab-panel" id="tab-agent">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>Agent Run（自动调用工具）</h3>
+        <label>任务</label>
+        <textarea id="agent_task" rows="4">写一段有语法错误的 Python 代码，比如函数缺少冒号、缩进不对，然后自动修复错误，让语法合法。</textarea>
+        <div class="row">
+          <div>
+            <label>语言</label>
+            <select id="agent_lang">
+              <option value="python" selected>Python</option>
+              <option value="java">Java</option>
+              <option value="other">通用</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="agentRun()">🤖 启动 Agent</button>
+        <div id="agent_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>计算器工具（直接）</h3>
+        <label>数学表达式</label>
+        <input type="text" id="calc_expr" value="(3 + 5) * 2 - 7 / 2">
+        <button class="btn" onclick="calcRun()">🧮 计算</button>
+        <div id="calc_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>Python 语法校验工具</h3>
+        <label>Python 代码</label>
+        <textarea id="py_code" rows="6">def hello()
+    print("missing colon)
+    return 1
+</textarea>
+        <button class="btn" onclick="checkPy()">🐍 校验 Python</button>
+        <div id="py_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>Java 语法校验工具</h3>
+        <label>Java 代码片段（或完整类）</label>
+        <textarea id="java_code" rows="6">public class Demo {
+  public static void main(String[] args) {
+    System.out.println("missing semicolon"
+  }
+}</textarea>
+        <button class="btn" onclick="checkJava()">☕ 校验 Java</button>
+        <div id="java_result" class="result-box loading">等待运行...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 工作流 / Planner ============ -->
+  <div class="tab-panel" id="tab-flow">
+    <div class="panel-grid">
+      <div class="card">
+        <h3>工作流：代码生成 → 校验 → 失败重试循环</h3>
+        <label>需求</label>
+        <textarea id="wf_req" rows="4">实现一个 FastAPI 分页查询接口，按参数 page / page_size 返回分页数据，统一响应格式 {code, data:{list,total,page,page_size}, message}</textarea>
+        <div class="row">
+          <div>
+            <label>语言</label>
+            <select id="wf_lang">
+              <option value="Python" selected>Python</option>
+              <option value="Java">Java</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="wfRun()">🔄 运行工作流</button>
+        <div id="wf_result" class="result-box loading">等待运行...</div>
+      </div>
+      <div class="card">
+        <h3>Planner：任务拆分 + 顺序执行</h3>
+        <label>复杂任务（会拆成：代码生成 → 单元测试 → 接口文档）</label>
+        <textarea id="pl_task" rows="5">实现一个 Redis 分布式锁工具类；
+基于这份代码生成完整的单元测试；
+最后生成接口使用文档（Markdown）。</textarea>
+        <div class="row">
+          <div>
+            <label>语言</label>
+            <select id="pl_lang">
+              <option value="Python" selected>Python</option>
+              <option value="Java">Java</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="plSplit()">📋 仅拆分计划</button>
+          <button class="btn ghost" onclick="plRun()">🚀 拆分 + 执行</button>
+        </div>
+        <div id="pl_result" class="result-box loading">等待运行...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KV Cache ============ -->
+  <div class="tab-panel" id="tab-kv">
+    <div class="card" style="max-width:960px;">
+      <h3>KV Cache 多轮累积性能测试（观察耗时变化）</h3>
+      <div class="row">
+        <div>
+          <label>总轮数</label>
+          <input type="number" id="kv_rounds" value="5" min="2" max="30">
+        </div>
+        <div>
+          <label>每轮最大 tokens</label>
+          <input type="number" id="kv_tokens" value="256" min="32" max="2048">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn" onclick="kvRun()">⚡ 开始测试</button>
+        </div>
+      </div>
+      <div id="kv_meta" style="margin-top:12px;color:#555;font-size:13px;">未开始...</div>
+      <table class="kv-table" id="kv_table">
+        <thead>
+          <tr><th>轮次</th><th>消息数</th><th>上下文字符</th><th>耗时(ms)</th><th>预览</th><th>错误</th></tr>
+        </thead>
+        <tbody><tr><td colspan="6" style="text-align:center;color:#94a3b8;">（等待运行）</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ===== tabs =====
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+    };
+  });
+
+  // ===== meta =====
+  fetch('/api/health').then(r => r.json()).then(d => {
+    document.getElementById('provider').textContent = d.provider || '—';
+    document.getElementById('startup').textContent = new Date(d.timestamp).toLocaleString();
+  }).catch(() => {
+    document.getElementById('provider').textContent = '读取失败（请启动后端）';
+  });
+
+  // ===== helpers =====
+  async function postJson(url, body, outId) {
+    const box = document.getElementById(outId);
+    if (box) { box.className = 'result-box loading'; box.textContent = '⏳ 请求中...'; }
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const text = await r.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { code: r.status, message: '非JSON响应', data: text }; }
+      const code = data.code || (r.ok ? 200 : 500);
+      const ok = (code >= 200 && code < 300) && r.ok;
+      const pretty = (typeof data.data === 'string')
+        ? data.data
+        : (data.data !== undefined ? JSON.stringify(data.data, null, 2) : JSON.stringify(data, null, 2));
+      const out = `[HTTP ${r.status}] ${data.message || (ok ? 'OK' : 'Error')}\n${'━'.repeat(40)}\n${pretty}`;
+      if (box) { box.className = 'result-box ' + (ok ? 'success' : 'error'); box.textContent = out; }
+      return data;
+    } catch (e) {
+      if (box) { box.className = 'result-box error'; box.textContent = '❌ 请求异常：' + e.message; }
+      return null;
+    }
+  }
+
+  function val(id) { return document.getElementById(id).value; }
+
+  // ===== basic =====
+  function runSimpleChat() { postJson('/api/basic/chat', {prompt: val('simple_prompt')}, 'simple_result'); }
+  function runPT() { postJson('/api/basic/prompt-template', {requirement: val('pt_req')}, 'pt_result'); }
+  function runPTPreview() { postJson('/api/basic/prompt-preview', {requirement: val('pt_req')}, 'pt_result'); }
+  function runTemperature() {
+    const temps = val('t_list').split(',').map(s => parseFloat(s.trim())).filter(x => !isNaN(x));
+    postJson('/api/basic/temperature', {prompt: val('t_prompt'), temperatures: temps}, 't_result');
+  }
+
+  async function runStream() {
+    const area = document.getElementById('stream_area');
+    area.textContent = '';
+    try {
+      const r = await fetch('/api/basic/stream', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Accept': 'text/event-stream'},
+        body: JSON.stringify({prompt: val('stream_prompt')})
+      });
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      while (true) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, {stream: true});
+        // SSE chunks are 'data: xxx\n\n' or direct chunks
+        area.textContent = buffer;
+        area.scrollTop = area.scrollHeight;
+      }
+    } catch (e) {
+      area.textContent = '❌ 流式请求异常：' + e.message;
+    }
+  }
+
+  // ===== parse & memory =====
+  function runParseBean() { postJson('/api/advanced/parse/bean', {requirement: val('bean_req')}, 'bean_result'); }
+  function runParseList() { postJson('/api/advanced/parse/list', {requirement: val('list_req')}, 'list_result'); }
+  function runParseMap() { postJson('/api/advanced/parse/map', {requirement: val('list_req')}, 'list_result'); }
+
+  function renderChat(data) {
+    const box = document.getElementById('mem_chat');
+    const list = (data && data.data) || [];
+    if (!list.length) { box.innerHTML = '（还没有消息）'; return; }
+    box.innerHTML = list.map(m => {
+      const cls = (m.role === 'USER' || m.role === 'user') ? 'user' : 'ai';
+      const role = (m.role === 'USER' || m.role === 'user') ? '👤 你' : '🤖 AI';
+      return `<div class="msg ${cls}"><b>${role}:</b><br>${escapeHtml(m.content || '')}</div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  async function loadHistory() {
+    const conv = val('mem_conv');
+    const r = await fetch('/api/advanced/memory/' + encodeURIComponent(conv));
+    renderChat(await r.json());
+  }
+  async function sendMemoryChat() {
+    const conv = val('mem_conv');
+    const msg = val('mem_input');
+    const r = await postJson('/api/advanced/memory/chat', {conversationId: conv, message: msg});
+    if (r && r.code === 200) { await loadHistory(); document.getElementById('mem_input').value = ''; }
+  }
+  async function clearHistory() {
+    const conv = val('mem_conv');
+    await fetch('/api/advanced/memory/' + encodeURIComponent(conv), {method: 'DELETE'});
+    renderChat({data: []});
+  }
+
+  // ===== RAG =====
+  function ragLoad() { postJson('/api/rag/load', {content: val('rag_text'), sourceName: val('rag_src')}, 'rag_load_result'); }
+  function ragSplit() { postJson('/api/rag/split-preview', {content: val('rag_text'), sourceName: val('rag_src')}, 'rag_load_result'); }
+  function ragLoadClasspath() { postJson('/api/rag/load-classpath', null, 'rag_cp_result'); }
+  function ragSearch() { postJson('/api/rag/search', {query: val('rag_search_q')}, 'rag_search_result'); }
+  function ragQuery() { postJson('/api/rag/query', {query: val('rag_query_q')}, 'rag_query_result'); }
+
+  // ===== Agent =====
+  function agentRun() { postJson('/api/agent/run', {task: val('agent_task'), language: val('agent_lang')}, 'agent_result'); }
+  function calcRun() { postJson('/api/agent/tools/calculate', {expression: val('calc_expr')}, 'calc_result'); }
+  function checkPy() { postJson('/api/agent/tools/check-python', {code: val('py_code')}, 'py_result'); }
+  function checkJava() { postJson('/api/agent/tools/check-java', {code: val('java_code')}, 'java_result'); }
+
+  // ===== Workflow & Planner =====
+  function wfRun() { postJson('/api/orchestration/workflow/code-fix', {requirement: val('wf_req'), language: val('wf_lang')}, 'wf_result'); }
+  function plSplit() { postJson('/api/orchestration/planner/split', {task: val('pl_task'), language: val('pl_lang')}, 'pl_result'); }
+  function plRun() { postJson('/api/orchestration/planner/run', {task: val('pl_task'), language: val('pl_lang')}, 'pl_result'); }
+
+  // ===== KV =====
+  async function kvRun() {
+    const rounds = parseInt(val('kv_rounds')) || 5;
+    const tokens = parseInt(val('kv_tokens')) || 256;
+    const meta = document.getElementById('kv_meta');
+    const tbody = document.querySelector('#kv_table tbody');
+    meta.textContent = `🚀 进行中：rounds=${rounds}, maxTokens=${tokens} ...`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;">运行中...</td></tr>`;
+    const r = await fetch(`/api/kv-cache/run?rounds=${rounds}&maxTokens=${tokens}`, {method: 'POST'});
+    const data = await r.json();
+    if (!data || !data.data) {
+      meta.textContent = '❌ 请求失败：' + JSON.stringify(data);
+      return;
+    }
+    meta.innerHTML = `✅ Provider: <b>${data.data.modelProvider||''}</b>；总轮数: <b>${data.data.totalRounds||0}</b>`;
+    const rows = data.data.rounds || [];
+    tbody.innerHTML = rows.map(rr => `
+      <tr>
+        <td>${rr.round}</td>
+        <td>${rr.messageCount}</td>
+        <td>${rr.ctxChars}</td>
+        <td>${rr.elapsedMs}</td>
+        <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${rr.preview||''}</td>
+        <td style="color:#dc2626;">${rr.error||''}</td>
+      </tr>
+    `).join('');
+  }
+</script>
+</body>
+</html>
