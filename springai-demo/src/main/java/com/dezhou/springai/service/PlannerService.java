@@ -82,7 +82,7 @@ public class PlannerService {
     );
 
     public PlanResult splitPlan(String complexTask, String language) {
-        log.info("[splitPlan] provider={}, task={}", aiConfig.getProvider(), complexTask);
+        log.info("[splitPlan] provider={}, task={}", aiConfig.getChatProvider(), complexTask);
         StringBuilder toolCatalog = new StringBuilder();
         AVAILABLE_TOOLS.forEach((k, v) -> toolCatalog.append("- ").append(k).append(": ").append(v.description()).append("\n"));
 

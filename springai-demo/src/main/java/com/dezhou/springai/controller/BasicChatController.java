@@ -24,7 +24,7 @@ public class BasicChatController {
 
     @PostMapping("/chat")
     public ApiResponse<String> chat(@RequestBody ChatRequest req) {
-        return ApiResponse.ok(basicChatService.simpleChat(req.getPrompt()), aiConfig.getProvider());
+        return ApiResponse.ok(basicChatService.simpleChat(req.getPrompt()), aiConfig.getChatProvider());
     }
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -34,19 +34,19 @@ public class BasicChatController {
 
     @PostMapping("/prompt-template")
     public ApiResponse<String> promptTemplateCall(@RequestBody PromptTemplateRequest req) {
-        return ApiResponse.ok(basicChatService.promptTemplateCall(req.getRequirement()), aiConfig.getProvider());
+        return ApiResponse.ok(basicChatService.promptTemplateCall(req.getRequirement()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/prompt-preview")
     public ApiResponse<String> promptPreview(@RequestBody PromptTemplateRequest req) {
-        return ApiResponse.ok(basicChatService.formatPromptPreview(req.getRequirement()), aiConfig.getProvider());
+        return ApiResponse.ok(basicChatService.formatPromptPreview(req.getRequirement()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/temperature")
     public ApiResponse<Map<String, String>> temperatureTest(@RequestBody TemperatureRequest req) {
         return ApiResponse.ok(
                 basicChatService.temperatureTest(req.getPrompt(), req.getTemperatures()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 

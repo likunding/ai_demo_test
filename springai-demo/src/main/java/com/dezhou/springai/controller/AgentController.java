@@ -20,23 +20,23 @@ public class AgentController {
     public ApiResponse<AgentService.AgentResult> agentRun(@RequestBody AgentRunRequest req) {
         return ApiResponse.ok(
                 agentService.agentRun(req.getTask(), req.getLanguage()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 
     @PostMapping("/tools/calculate")
     public ApiResponse<String> calc(@RequestBody CalcRequest req) {
-        return ApiResponse.ok(agentService.directToolCalculate(req.getExpression()), aiConfig.getProvider());
+        return ApiResponse.ok(agentService.directToolCalculate(req.getExpression()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/tools/check-python")
     public ApiResponse<String> checkPython(@RequestBody CodeCheckRequest req) {
-        return ApiResponse.ok(agentService.directToolCheckPython(req.getCode()), aiConfig.getProvider());
+        return ApiResponse.ok(agentService.directToolCheckPython(req.getCode()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/tools/check-java")
     public ApiResponse<String> checkJava(@RequestBody CodeCheckRequest req) {
-        return ApiResponse.ok(agentService.directToolCheckJava(req.getCode()), aiConfig.getProvider());
+        return ApiResponse.ok(agentService.directToolCheckJava(req.getCode()), aiConfig.getChatProvider());
     }
 
     @Data

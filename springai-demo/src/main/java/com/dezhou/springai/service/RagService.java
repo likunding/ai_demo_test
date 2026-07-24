@@ -109,7 +109,7 @@ public class RagService {
 
                 问题: {question}
                 """;
-        log.info("[ragQuery] provider={}, question={}, contextChunks={}", aiConfig.getProvider(), question, docs.size());
+        log.info("[ragQuery] provider={}, question={}, contextChunks={}", aiConfig.getChatProvider(), question, docs.size());
         String answer = chatClient.prompt()
                 .user(usr -> usr.text(template).param("context", context).param("question", question))
                 .call()

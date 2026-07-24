@@ -23,7 +23,7 @@ public class BasicChatService {
     private final AiConfig aiConfig;
 
     public String simpleChat(String prompt) {
-        log.info("[simpleChat] provider={}, prompt={}", aiConfig.getProvider(), prompt);
+        log.info("[simpleChat] provider={}, prompt={}", aiConfig.getChatProvider(), prompt);
         return chatClient.prompt()
                 .user(prompt)
                 .call()
@@ -31,7 +31,7 @@ public class BasicChatService {
     }
 
     public Flux<String> streamChat(String prompt) {
-        log.info("[streamChat] provider={}, prompt={}", aiConfig.getProvider(), prompt);
+        log.info("[streamChat] provider={}, prompt={}", aiConfig.getChatProvider(), prompt);
         return chatClient.prompt()
                 .user(prompt)
                 .stream()
@@ -46,7 +46,7 @@ public class BasicChatService {
                 """;
         PromptTemplate promptTemplate = new PromptTemplate(template, Map.of("requirement", requirement));
         Prompt prompt = promptTemplate.create();
-        log.info("[promptTemplateCall] provider={}, requirement={}", aiConfig.getProvider(), requirement);
+        log.info("[promptTemplateCall] provider={}, requirement={}", aiConfig.getChatProvider(), requirement);
         return chatClient.prompt(prompt).call().content();
     }
 

@@ -49,7 +49,7 @@ public class KvCacheTestService {
     }
 
     public KvTestResult runKvCacheTest(String conversationId, int rounds, int maxTokens) {
-        log.info("[runKvCacheTest] provider={}, convId={}, rounds={}", aiConfig.getProvider(), conversationId, rounds);
+        log.info("[runKvCacheTest] provider={}, convId={}, rounds={}", aiConfig.getChatProvider(), conversationId, rounds);
         List<KvRoundResult> results = new ArrayList<>();
 
         int runningCtxChars = 0;
@@ -96,7 +96,7 @@ public class KvCacheTestService {
         }
 
         return KvTestResult.builder()
-                .modelProvider(aiConfig.getProvider())
+                .modelProvider(aiConfig.getChatProvider())
                 .totalRounds(rounds)
                 .rounds(results)
                 .build();

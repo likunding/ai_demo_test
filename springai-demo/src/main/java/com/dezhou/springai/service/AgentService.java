@@ -37,7 +37,7 @@ public class AgentService {
     }
 
     public AgentResult agentRun(String userTask, String language) {
-        log.info("[agentRun] provider={}, lang={}, task={}", aiConfig.getProvider(), language, userTask);
+        log.info("[agentRun] provider={}, lang={}, task={}", aiConfig.getChatProvider(), language, userTask);
         List<AgentStep> trace = new ArrayList<>();
         trace.add(newStep(1, "user_input", userTask));
 

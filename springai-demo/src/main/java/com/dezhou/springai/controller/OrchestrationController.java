@@ -22,7 +22,7 @@ public class OrchestrationController {
     public ApiResponse<WorkflowService.WorkflowResult> codeFix(@RequestBody CodeFixRequest req) {
         return ApiResponse.ok(
                 workflowService.runCodeFixWorkflow(req.getRequirement(), req.getLanguage()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 
@@ -30,7 +30,7 @@ public class OrchestrationController {
     public ApiResponse<PlannerService.PlanResult> splitPlan(@RequestBody PlannerRequest req) {
         return ApiResponse.ok(
                 plannerService.splitPlan(req.getTask(), req.getLanguage()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 
@@ -38,7 +38,7 @@ public class OrchestrationController {
     public ApiResponse<PlannerService.PlannerExecutionResult> runPlanner(@RequestBody PlannerRequest req) {
         return ApiResponse.ok(
                 plannerService.runPlanner(req.getTask(), req.getLanguage()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 

@@ -21,36 +21,36 @@ public class MemoryAndParserController {
 
     @PostMapping("/parse/bean")
     public ApiResponse<MemoryAndParserService.CodeResp> parseBean(@RequestBody ParseBeanRequest req) {
-        return ApiResponse.ok(memoryAndParserService.parseCodeToBean(req.getRequirement()), aiConfig.getProvider());
+        return ApiResponse.ok(memoryAndParserService.parseCodeToBean(req.getRequirement()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/parse/list")
     public ApiResponse<List<String>> parseList(@RequestBody ParseBeanRequest req) {
-        return ApiResponse.ok(memoryAndParserService.parseToList(req.getRequirement()), aiConfig.getProvider());
+        return ApiResponse.ok(memoryAndParserService.parseToList(req.getRequirement()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/parse/map")
     public ApiResponse<Map<String, Object>> parseMap(@RequestBody ParseBeanRequest req) {
-        return ApiResponse.ok(memoryAndParserService.parseToMap(req.getRequirement()), aiConfig.getProvider());
+        return ApiResponse.ok(memoryAndParserService.parseToMap(req.getRequirement()), aiConfig.getChatProvider());
     }
 
     @PostMapping("/memory/chat")
     public ApiResponse<String> chatWithMemory(@RequestBody MemoryChatRequest req) {
         return ApiResponse.ok(
                 memoryAndParserService.chatWithMemory(req.getConversationId(), req.getMessage()),
-                aiConfig.getProvider()
+                aiConfig.getChatProvider()
         );
     }
 
     @GetMapping("/memory/{conversationId}")
     public ApiResponse<List<MemoryAndParserService.ChatTurn>> getHistory(@PathVariable String conversationId) {
-        return ApiResponse.ok(memoryAndParserService.getConversationHistory(conversationId), aiConfig.getProvider());
+        return ApiResponse.ok(memoryAndParserService.getConversationHistory(conversationId), aiConfig.getChatProvider());
     }
 
     @DeleteMapping("/memory/{conversationId}")
     public ApiResponse<Void> clearHistory(@PathVariable String conversationId) {
         memoryAndParserService.clearConversation(conversationId);
-        return ApiResponse.ok(null, aiConfig.getProvider());
+        return ApiResponse.ok(null, aiConfig.getChatProvider());
     }
 
     @Data

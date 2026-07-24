@@ -23,7 +23,7 @@ public class IndexController {
     public ApiResponse<Map<String, Object>> index() {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("name", "Spring AI Demo - Ollama & vLLM Samples");
-        data.put("provider", aiConfig.getProvider());
+        data.put("provider", aiConfig.getChatProvider());
         data.put("timestamp", Instant.now());
 
         Map<String, String> endpoints = new LinkedHashMap<>();
@@ -58,16 +58,16 @@ public class IndexController {
         endpoints.put("POST /api/kv-cache/run", "KV Cache多轮上下文累积测试");
 
         data.put("endpoints", endpoints);
-        return ApiResponse.ok(data, aiConfig.getProvider());
+        return ApiResponse.ok(data, aiConfig.getChatProvider());
     }
 
     @GetMapping("/health")
     public ApiResponse<Map<String, Object>> health() {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("status", "UP");
-        data.put("provider", aiConfig.getProvider());
+        data.put("provider", aiConfig.getChatProvider());
         data.put("timestamp", Instant.now());
-        return ApiResponse.ok(data, aiConfig.getProvider());
+        return ApiResponse.ok(data, aiConfig.getChatProvider());
     }
 
     @PostMapping("/kv-cache/run")
@@ -76,7 +76,7 @@ public class IndexController {
             @RequestParam(defaultValue = "256") int maxTokens
     ) {
         String convId = "kv-test-" + UUID.randomUUID().toString().substring(0, 8);
-        return ApiResponse.ok(kvCacheTestService.runKvCacheTest(convId, rounds, maxTokens), aiConfig.getProvider());
+        return ApiResponse.ok(kvCacheTestService.runKvCacheTest(convId, rounds, maxTokens), aiConfig.getChatProvider());
     }
 
 }

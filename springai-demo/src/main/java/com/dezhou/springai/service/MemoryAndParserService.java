@@ -56,7 +56,7 @@ public class MemoryAndParserService {
                 {format}
                 需求：{req}
                 """;
-        log.info("[parseCodeToBean] provider={}, req={}", aiConfig.getProvider(), requirement);
+        log.info("[parseCodeToBean] provider={}, req={}", aiConfig.getChatProvider(), requirement);
         String raw = chatClient.prompt()
                 .user(usr -> usr.text(template).param("format", format).param("req", requirement))
                 .advisors(a -> a.param(MessageChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY, 0))

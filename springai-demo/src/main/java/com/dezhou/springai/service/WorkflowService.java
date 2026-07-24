@@ -104,7 +104,7 @@ public class WorkflowService {
     }
 
     public WorkflowResult runCodeFixWorkflow(String requirement, String language) {
-        log.info("[runCodeFixWorkflow] provider={}, lang={}, req={}", aiConfig.getProvider(), language, requirement);
+        log.info("[runCodeFixWorkflow] provider={}, lang={}, req={}", aiConfig.getCodeProvider(), language, requirement);
         List<WorkflowState> history = new ArrayList<>();
         WorkflowState state = WorkflowState.builder()
                 .requirement(requirement)
