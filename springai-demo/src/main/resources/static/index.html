@@ -241,6 +241,7 @@
     <button class="tab-btn" data-tab="flow">🪄 工作流 / Planner</button>
     <button class="tab-btn" data-tab="kv">📊 KV Cache 测试</button>
     <button class="tab-btn" data-tab="card">🃏 扑克牌识别</button>
+    <button class="tab-btn" data-tab="texas">🎯 德州胜率</button>
   </div>
 
   <!-- ============ 基础聊天 ============ -->
@@ -516,6 +517,44 @@
     </div>
   </div>
 
+  <!-- ============ 德州扑克胜率 ============ -->
+  <div class="tab-panel" id="tab-texas">
+    <div class="card" style="max-width:900px;">
+      <h3>🎯 德州扑克胜率计算（图片识别 + foldem 引擎）</h3>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+        <!-- 手牌上传 -->
+        <div style="flex:1;min-width:300px;">
+          <label>📸 上传手牌图片（需恰好2张）</label>
+          <input type="file" id="texas_hand_image" accept="image/*" style="width:100%;padding:8px;border:1px dashed #d4d8e5;border-radius:6px;background:#f8fafc;">
+          <div id="texas_hand_preview" style="width:100%;height:180px;border:2px dashed #d4d8e5;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;margin-top:8px;">
+            点击选择手牌图片
+          </div>
+        </div>
+        <!-- 公牌上传 -->
+        <div style="flex:1;min-width:300px;">
+          <label>📸 上传公牌图片（0-5张，可不上传）</label>
+          <input type="file" id="texas_community_image" accept="image/*" style="width:100%;padding:8px;border:1px dashed #d4d8e5;border-radius:6px;background:#f8fafc;">
+          <div id="texas_community_preview" style="width:100%;height:180px;border:2px dashed #d4d8e5;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;margin-top:8px;">
+            点击选择公牌图片（可选）
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <label>对手数量：
+          <select id="texas_opponents" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;">
+            <option value="4">4 人</option>
+            <option value="5" selected>5 人</option>
+            <option value="6">6 人</option>
+            <option value="7">7 人</option>
+            <option value="8">8 人</option>
+          </select>
+        </label>
+        <button class="btn" onclick="texasWinrate()">🎯 识别并计算胜率</button>
+      </div>
+      <div id="texas_result" class="result-box loading" style="margin-top:16px;">等待上传图片...</div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -688,7 +727,7 @@
     const preview = document.getElementById('card_preview');
     const reader = new FileReader();
     reader.onload = function(event) {
-      preview.innerHTML = `<img src="${event.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
+      preview.innerHTML = `<img src="${event.target.result}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
     };
     reader.readAsDataURL(file);
   });
@@ -749,6 +788,146 @@
         box.textContent = `[HTTP ${r.status}] ${data.message || (ok ? 'OK' : 'Error')}\n${'━'.repeat(40)}\n${JSON.stringify(data, null, 2)}`;
       }
       
+    } catch (e) {
+      box.className = 'result-box error';
+      box.textContent = '❌ 请求异常：' + e.message;
+    }
+  }
+
+  // ===== Texas Holdem Win Rate =====
+  // 手牌图片预览
+  document.getElementById('texas_hand_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const preview = document.getElementById('texas_hand_preview');
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      preview.innerHTML = `<img src="${event.target.result}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // 公牌图片预览
+  document.getElementById('texas_community_image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const preview = document.getElementById('texas_community_preview');
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      preview.innerHTML = `<img src="${event.target.result}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function texasWinrate() {
+    const handInput = document.getElementById('texas_hand_image');
+    const communityInput = document.getElementById('texas_community_image');
+    const opponentsSelect = document.getElementById('texas_opponents');
+    const box = document.getElementById('texas_result');
+
+    const handFile = handInput.files ? handInput.files[0] : null;
+    if (!handFile) {
+      box.className = 'result-box error';
+      box.textContent = '❌ 请先选择手牌图片';
+      return;
+    }
+
+    const numOpponents = parseInt(opponentsSelect.value) || 1;
+    box.className = 'result-box loading';
+    box.textContent = '⏳ 正在识别手牌和公牌，并计算胜率...';
+
+    try {
+      const formData = new FormData();
+      formData.append('handImage', handFile);
+
+      const communityFile = communityInput.files ? communityInput.files[0] : null;
+      if (communityFile) {
+        formData.append('communityImage', communityFile);
+      }
+      formData.append('numOpponents', numOpponents);
+
+      const r = await fetch('/api/card/texas-winrate', {
+        method: 'POST',
+        body: formData
+      });
+
+      const text = await r.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { code: r.status, message: '非JSON响应', data: text }; }
+
+      const code = data.code || (r.ok ? 200 : 500);
+      const ok = (code >= 200 && code < 300) && r.ok;
+
+      box.className = 'result-box ' + (ok ? 'success' : 'error');
+
+      if (!ok || !data.data) {
+        box.textContent = `[HTTP ${r.status}] ${data.message || 'Error'}\n${'━'.repeat(40)}\n${JSON.stringify(data, null, 2)}`;
+        return;
+      }
+
+      const d = data.data;
+      const lines = [];
+
+      // 识别结果
+      lines.push('═══ 识别结果 ═══');
+      lines.push('');
+
+      // 手牌
+      const holeCards = d.holeCards;
+      if (holeCards && holeCards.cards) {
+        lines.push(`手牌（${holeCards.count || holeCards.cards.length}张）：`);
+        holeCards.cards.forEach(c => {
+          lines.push(`  ${c.description || (c.suit || '') + (c.rank || '')}`);
+        });
+      }
+      lines.push(`手牌代码：${(d.holeCardCodes || []).join(', ')}`);
+      lines.push('');
+
+      // 公牌
+      const communityCards = d.communityCards;
+      if (communityCards && communityCards.cards && communityCards.cards.length > 0) {
+        lines.push(`公牌（${communityCards.count || communityCards.cards.length}张）：`);
+        communityCards.cards.forEach(c => {
+          lines.push(`  ${c.description || (c.suit || '') + (c.rank || '')}`);
+        });
+        lines.push(`公牌代码：${(d.communityCardCodes || []).join(', ')}`);
+      } else {
+        lines.push('公牌：无（翻牌前）');
+      }
+      lines.push('');
+
+      // 胜率
+      const wr = d.winRate;
+      if (wr) {
+        lines.push('═══ 胜率计算 ═══');
+        lines.push('');
+        lines.push(`对手数量：${d.numOpponents} 人`);
+        lines.push('');
+        const winPct = wr.winRateFormatted || (Number(wr.winRate).toFixed(2) + '%');
+        const tiePct = wr.tieRateFormatted || (Number(wr.tieRate).toFixed(2) + '%');
+        const losePct = wr.loseRateFormatted || (Number(wr.loseRate).toFixed(2) + '%');
+        lines.push(`  🏆 胜率：${winPct}`);
+        lines.push(`  🤝 平局：${tiePct}`);
+        lines.push(`  💀 败率：${losePct}`);
+        lines.push('');
+        const sims = (wr.wins || 0) + (wr.ties || 0) + (wr.losses || 0);
+        lines.push(`  模拟次数：${sims}`);
+        lines.push(`  胜：${wr.wins || 0} | 平：${wr.ties || 0} | 负：${wr.losses || 0}`);
+        if (sims === 0) {
+          lines.push('');
+          lines.push('⚠ 胜率未算出（后端计算失败，请查看服务日志）');
+        }
+      } else {
+        lines.push('═══ 胜率计算 ═══');
+        lines.push('⚠ 响应中缺少 winRate 字段');
+      }
+
+      lines.push('');
+      lines.push(`引擎：foldem（codes.derive:foldem）`);
+      lines.push(`Provider：${data.provider || '—'}`);
+
+      box.textContent = lines.join('\n');
+
     } catch (e) {
       box.className = 'result-box error';
       box.textContent = '❌ 请求异常：' + e.message;

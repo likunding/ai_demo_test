@@ -98,6 +98,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>codes.derive</groupId>
+            <artifactId>foldem</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -44,7 +44,7 @@ public class AiConfig {
     @Value("${spring.ai.ollama.chat.options.model:deepseek-coder:6.7b}")
     private String ollamaChatModel;
 
-    @Value("${spring.ai.ollama.vision.options.model:qwen2-vl:7b}")
+    @Value("${spring.ai.ollama.vision.options.model:qwen2.5vl:7b}")
     private String ollamaVisionModel;
 
     @Value("${spring.ai.ollama.code.options.model:deepseek-coder:6.7b}")

@@ -1,7 +1,6 @@
 package com.dezhou.springai.service;
 
 import com.dezhou.springai.config.AiConfig;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
@@ -19,12 +18,21 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CardRecognitionService {
 
-    @Qualifier("visionChatModel")
     private final ChatModel visionChatModel;
     private final AiConfig aiConfig;
+
+    /**
+     * 必须把 @Qualifier 写在构造器参数上。
+     * Lombok @RequiredArgsConstructor 不会把字段上的 @Qualifier 拷到构造器，
+     * 否则会注入 @Primary 的 chat 模型（如 deepseek-coder），导致看图报 multimodal 错误。
+     */
+    public CardRecognitionService(@Qualifier("visionChatModel") ChatModel visionChatModel,
+                                  AiConfig aiConfig) {
+        this.visionChatModel = visionChatModel;
+        this.aiConfig = aiConfig;
+    }
 
     private static final String PROMPT_TEMPLATE = """
             请仔细识别图片中的每一张扑克牌。
@@ -45,8 +53,14 @@ public class CardRecognitionService {
             """.strip();
 
     public Map<String, Object> recognizeCards(MultipartFile imageFile) throws IOException {
-        log.info("[recognizeCards] provider={}, filename={}, size={}", 
-                aiConfig.getVisionProvider(), imageFile.getOriginalFilename(), imageFile.getSize());
+        log.info("[recognizeCards] provider={}, modelClass={}, filename={}, size={}",
+                aiConfig.getVisionProvider(),
+                visionChatModel.getClass().getSimpleName(),
+                imageFile.getOriginalFilename(),
+                imageFile.getSize());
+        if (visionChatModel.getDefaultOptions() != null) {
+            log.info("[recognizeCards] modelOptions={}", visionChatModel.getDefaultOptions());
+        }
 
         byte[] imageBytes = imageFile.getBytes();
         ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
