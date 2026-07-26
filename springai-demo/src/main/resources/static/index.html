@@ -520,7 +520,8 @@
   <!-- ============ 德州扑克胜率 ============ -->
   <div class="tab-panel" id="tab-texas">
     <div class="card" style="max-width:900px;">
-      <h3>🎯 德州扑克胜率计算（图片识别 + foldem 引擎）</h3>
+      <h3>🎯 德州实战辅助（识牌 + 胜率 + 行动建议）</h3>
+      <p style="color:#64748b;font-size:13px;margin:0 0 12px;">基于胜率与底池赔率的近似建议，非 GTO。</p>
       <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
         <!-- 手牌上传 -->
         <div style="flex:1;min-width:300px;">
@@ -539,9 +540,12 @@
           </div>
         </div>
       </div>
-      <div style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-        <label>对手数量：
-          <select id="texas_opponents" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;">
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <label>对手数量<br>
+          <select id="texas_opponents" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;min-width:90px;">
+            <option value="1">1 人</option>
+            <option value="2">2 人</option>
+            <option value="3">3 人</option>
             <option value="4">4 人</option>
             <option value="5" selected>5 人</option>
             <option value="6">6 人</option>
@@ -549,7 +553,34 @@
             <option value="8">8 人</option>
           </select>
         </label>
-        <button class="btn" onclick="texasWinrate()">🎯 识别并计算胜率</button>
+        <label>场面<br>
+          <select id="texas_spot" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;min-width:130px;">
+            <option value="">仅算胜率</option>
+            <option value="FACING_RAISE">有人加注</option>
+            <option value="EVERYONE_CHECKED">全部过牌</option>
+            <option value="OPEN_UNOPENED">开池决策</option>
+          </select>
+        </label>
+        <label>位置<br>
+          <select id="texas_position" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;min-width:100px;">
+            <option value="EP">前位 EP</option>
+            <option value="MP">中位 MP</option>
+            <option value="CO">关位 CO</option>
+            <option value="BTN" selected>庄家 BTN</option>
+            <option value="SB">小盲 SB</option>
+            <option value="BB">大盲 BB</option>
+          </select>
+        </label>
+        <label>底池<br>
+          <input type="number" id="texas_pot" min="0" step="1" placeholder="如 100" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;width:100px;">
+        </label>
+        <label>需跟注<br>
+          <input type="number" id="texas_to_call" min="0" step="1" placeholder="全过填0" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;width:100px;">
+        </label>
+        <label>大盲(可选)<br>
+          <input type="number" id="texas_bb" min="0" step="1" placeholder="如 10" style="padding:6px 10px;border:1px solid #d4d8e5;border-radius:6px;width:100px;">
+        </label>
+        <button class="btn" onclick="texasWinrate()">🎯 识别并给出建议</button>
       </div>
       <div id="texas_result" class="result-box loading" style="margin-top:16px;">等待上传图片...</div>
     </div>
@@ -823,6 +854,11 @@
     const handInput = document.getElementById('texas_hand_image');
     const communityInput = document.getElementById('texas_community_image');
     const opponentsSelect = document.getElementById('texas_opponents');
+    const spotSelect = document.getElementById('texas_spot');
+    const positionSelect = document.getElementById('texas_position');
+    const potInput = document.getElementById('texas_pot');
+    const toCallInput = document.getElementById('texas_to_call');
+    const bbInput = document.getElementById('texas_bb');
     const box = document.getElementById('texas_result');
 
     const handFile = handInput.files ? handInput.files[0] : null;
@@ -832,9 +868,19 @@
       return;
     }
 
+    const spot = (spotSelect.value || '').trim();
+    const potVal = potInput.value !== '' ? Number(potInput.value) : null;
+    if (spot && (potVal === null || Number.isNaN(potVal) || potVal < 0)) {
+      box.className = 'result-box error';
+      box.textContent = '❌ 选择场面后请填写有效底池（≥0）';
+      return;
+    }
+
     const numOpponents = parseInt(opponentsSelect.value) || 1;
     box.className = 'result-box loading';
-    box.textContent = '⏳ 正在识别手牌和公牌，并计算胜率...';
+    box.textContent = spot
+      ? '⏳ 正在识别牌面、计算胜率并生成行动建议...'
+      : '⏳ 正在识别手牌和公牌，并计算胜率...';
 
     try {
       const formData = new FormData();
@@ -845,6 +891,17 @@
         formData.append('communityImage', communityFile);
       }
       formData.append('numOpponents', numOpponents);
+
+      if (spot) {
+        formData.append('spot', spot);
+        formData.append('position', positionSelect.value || 'BTN');
+        formData.append('pot', potVal);
+        const toCallVal = toCallInput.value !== '' ? Number(toCallInput.value) : 0;
+        formData.append('toCall', Number.isNaN(toCallVal) ? 0 : toCallVal);
+        if (bbInput.value !== '' && !Number.isNaN(Number(bbInput.value))) {
+          formData.append('bigBlind', Number(bbInput.value));
+        }
+      }
 
       const r = await fetch('/api/card/texas-winrate', {
         method: 'POST',
@@ -922,8 +979,37 @@
         lines.push('⚠ 响应中缺少 winRate 字段');
       }
 
+      // 行动建议
+      const advice = d.actionAdvice;
+      if (advice) {
+        lines.push('');
+        lines.push('═══ 行动建议 ═══');
+        lines.push('');
+        const actionLabel = advice.actionLabel || advice.action || '—';
+        lines.push(`  ▶ 建议：${actionLabel}` + (advice.action ? ` (${advice.action})` : ''));
+        if (advice.raiseTo != null) {
+          lines.push(`  ▶ 建议加注到：${advice.raiseTo}`);
+        }
+        lines.push(`  ▶ 底池赔率：${(Number(advice.potOdds || 0) * 100).toFixed(1)}%`);
+        lines.push(`  ▶ 所需胜率：${Number(advice.requiredEquity || 0).toFixed(1)}%`);
+        if (advice.position) {
+          lines.push(`  ▶ 位置：${advice.position}`);
+        }
+        if (advice.spot) {
+          lines.push(`  ▶ 场面：${advice.spot}`);
+        }
+        lines.push('');
+        lines.push(`  理由：${advice.reason || '—'}`);
+        lines.push('');
+        lines.push('（启发式近似建议，非 GTO）');
+      } else if (spot) {
+        lines.push('');
+        lines.push('═══ 行动建议 ═══');
+        lines.push('⚠ 未返回建议（请确认已填底池与场面）');
+      }
+
       lines.push('');
-      lines.push(`引擎：foldem（codes.derive:foldem）`);
+      lines.push(`引擎：foldem + ActionAdvisor`);
       lines.push(`Provider：${data.provider || '—'}`);
 
       box.textContent = lines.join('\n');

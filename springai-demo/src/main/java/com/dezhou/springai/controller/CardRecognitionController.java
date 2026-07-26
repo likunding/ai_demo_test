@@ -3,10 +3,14 @@ package com.dezhou.springai.controller;
 import com.dezhou.springai.config.AiConfig;
 import com.dezhou.springai.dto.ApiResponse;
 import com.dezhou.springai.service.CardRecognitionService;
+import com.dezhou.springai.texas.model.ActionAdvice;
+import com.dezhou.springai.texas.model.ActionSpot;
 import com.dezhou.springai.texas.model.Card;
+import com.dezhou.springai.texas.model.Position;
 import com.dezhou.springai.texas.model.Rank;
 import com.dezhou.springai.texas.model.Suit;
 import com.dezhou.springai.texas.model.WinRateResult;
+import com.dezhou.springai.texas.service.ActionAdvisor;
 import com.dezhou.springai.texas.service.WinRateCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,7 @@ public class CardRecognitionController {
     private final CardRecognitionService cardRecognitionService;
     private final AiConfig aiConfig;
     private final WinRateCalculator winRateCalculator;
+    private final ActionAdvisor actionAdvisor;
 
     @PostMapping(value = "/recognize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<Map<String, Object>> recognize(
@@ -50,18 +55,24 @@ public class CardRecognitionController {
     }
 
     /**
-     * 德州扑克胜率计算：上传手牌图片 + 公牌图片，识别后计算胜率
+     * 德州扑克胜率 + 实战建议：上传手牌/公牌图片，识别后计算胜率，
+     * 若提供 pot/spot 等场面参数则额外返回行动建议。
      */
     @PostMapping(value = "/texas-winrate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<Map<String, Object>> texasWinrate(
             @RequestParam("handImage") MultipartFile handImage,
             @RequestParam(value = "communityImage", required = false) MultipartFile communityImage,
-            @RequestParam(value = "numOpponents", defaultValue = "1") int numOpponents) {
+            @RequestParam(value = "numOpponents", defaultValue = "1") int numOpponents,
+            @RequestParam(value = "pot", required = false) Double pot,
+            @RequestParam(value = "toCall", required = false) Double toCall,
+            @RequestParam(value = "position", required = false) String position,
+            @RequestParam(value = "spot", required = false) String spot,
+            @RequestParam(value = "bigBlind", required = false) Double bigBlind) {
         try {
-            log.info("[texasWinrate] handImage={}, communityImage={}, numOpponents={}",
+            log.info("[texasWinrate] handImage={}, communityImage={}, numOpponents={}, pot={}, toCall={}, position={}, spot={}",
                     handImage.getOriginalFilename(),
                     communityImage != null ? communityImage.getOriginalFilename() : "null",
-                    numOpponents);
+                    numOpponents, pot, toCall, position, spot);
 
             // 1. 识别手牌
             if (handImage.isEmpty()) {
@@ -96,6 +107,30 @@ public class CardRecognitionController {
             result.put("holeCardCodes", holeCards.stream().map(Card::toCode).toList());
             result.put("communityCardCodes", communityCards.stream().map(Card::toCode).toList());
             result.put("numOpponents", numOpponents);
+
+            // 5. 可选：实战行动建议（需至少提供 spot + pot）
+            ActionSpot actionSpot = ActionSpot.fromString(spot);
+            if (actionSpot != null && pot != null) {
+                Position pos = Position.fromString(position);
+                double callAmount = toCall != null ? toCall : 0.0;
+                ActionAdvice advice = actionAdvisor.advise(
+                        winRate.getWinRate(),
+                        pot,
+                        callAmount,
+                        pos,
+                        actionSpot,
+                        bigBlind
+                );
+                result.put("actionAdvice", advice);
+                result.put("scene", Map.of(
+                        "pot", pot,
+                        "toCall", callAmount,
+                        "position", pos != null ? pos.name() : Position.MP.name(),
+                        "spot", actionSpot.name(),
+                        "bigBlind", bigBlind != null ? bigBlind : 0
+                ));
+                log.info("[texasWinrate] advice={} reason={}", advice.getAction(), advice.getReason());
+            }
 
             log.info("[texasWinrate] hole={}, community={}, winRate={}%",
                     holeCards, communityCards, winRate.getWinRateFormatted());
